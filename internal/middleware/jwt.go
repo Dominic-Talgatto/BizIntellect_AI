@@ -60,7 +60,8 @@ func Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, int(userIDFloat))
+		userID := int(userIDFloat)
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -10,8 +10,6 @@ import Upload from './pages/Upload'
 import Forecast from './pages/Forecast'
 import Tax from './pages/Tax'
 import Chat from './pages/Chat'
-import { Loader2 } from 'lucide-react'
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -22,21 +20,13 @@ const queryClient = new QueryClient({
 })
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <Loader2 className="animate-spin text-violet-400" size={48} />
-      </div>
-    )
-  }
+  const { isAuthenticated } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
   return <Layout>{children}</Layout>
 }
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth()
-  console.debug('[AppRoutes] isAuthenticated=', isAuthenticated)
   return (
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />

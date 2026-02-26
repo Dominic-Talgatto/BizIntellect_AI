@@ -11,35 +11,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  // Optimistic: if a token is in storage, treat user as authenticated immediately.
+  // A background /me call silently revokes it if the token is expired/invalid.
+  const hasToken = !!localStorage.getItem('token')
+  const [isAuthenticated, setIsAuthenticated] = useState(hasToken)
+  const isLoading = false
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    console.debug('[AuthProvider] init, token=', token)
-    if (token) {
-      authApi.me()
-        .then(() => setIsAuthenticated(true))
-        .catch(() => {
-          localStorage.removeItem('token')
-          setIsAuthenticated(false)
-        })
-        .finally(() => setIsLoading(false))
-    } else {
-      console.debug('[AuthProvider] no token, marking not authenticated')
-      setIsLoading(false)
-    }
+    if (!token) return
+
+    authApi.me().catch(() => {
+      localStorage.removeItem('token')
+      setIsAuthenticated(false)
+    })
   }, [])
 
   const login = (token: string) => {
     localStorage.setItem('token', token)
-    console.debug('[AuthProvider] login, token set')
     setIsAuthenticated(true)
   }
 
   const logout = () => {
     localStorage.removeItem('token')
-    console.debug('[AuthProvider] logout, token removed')
     setIsAuthenticated(false)
   }
 

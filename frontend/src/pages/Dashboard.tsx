@@ -14,20 +14,59 @@ function fmt(n: number) {
 }
 
 export default function Dashboard() {
-  const { data: summary } = useQuery({
+  const { data: summary, error: summaryError, isLoading: summaryLoading } = useQuery({
     queryKey: ['summary'],
     queryFn: () => dashboardApi.summary().then(r => r.data),
+    retry: 0,
   })
 
-  const { data: breakdown = [] } = useQuery({
+  const { data: breakdown = [], error: breakdownError, isLoading: breakdownLoading } = useQuery({
     queryKey: ['breakdown'],
     queryFn: () => dashboardApi.breakdown().then(r => r.data),
+    retry: 0,
   })
 
-  const { data: cashflow = [] } = useQuery({
+  const { data: cashflow = [], error: cashflowError, isLoading: cashflowLoading } = useQuery({
     queryKey: ['cashflow'],
     queryFn: () => dashboardApi.cashflow({ granularity: 'week' }).then(r => r.data),
+    retry: 0,
   })
+
+  // Debug: log state
+  console.log('[Dashboard] loading:', { summaryLoading, breakdownLoading, cashflowLoading })
+  console.log('[Dashboard] data:', { summary, breakdown, cashflow })
+  if (summaryError) console.error('[Dashboard] summary error:', summaryError)
+  if (breakdownError) console.error('[Dashboard] breakdown error:', breakdownError)
+  if (cashflowError) console.error('[Dashboard] cashflow error:', cashflowError)
+
+  // Show loading state
+  if (summaryLoading || breakdownLoading || cashflowLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-slate-400">Loading dashboard...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if any API call fails
+  if (summaryError || breakdownError || cashflowError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-slate-400 text-sm mt-1">Your business financial overview</p>
+        </div>
+        <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+          <p className="font-medium">Failed to load dashboard data</p>
+          <p className="text-xs mt-1 text-rose-300">
+            {summaryError?.message || breakdownError?.message || cashflowError?.message || 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

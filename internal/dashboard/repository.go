@@ -89,9 +89,10 @@ func (r *Repository) GetCategoryBreakdown(ctx context.Context, userID int, from,
 
 func (r *Repository) GetCashFlow(ctx context.Context, userID int, from, to time.Time, granularity string) ([]CashFlowPoint, error) {
 	truncExpr := "DATE_TRUNC('day', date)"
-	if granularity == "week" {
+	switch granularity {
+	case "week":
 		truncExpr = "DATE_TRUNC('week', date)"
-	} else if granularity == "month" {
+	case "month":
 		truncExpr = "DATE_TRUNC('month', date)"
 	}
 

@@ -45,6 +45,10 @@ func parseDateRange(r *http.Request) (time.Time, time.Time) {
 
 func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+	if userID == 0 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	from, to := parseDateRange(r)
 
 	s, err := h.repo.GetSummary(r.Context(), userID, from, to)
@@ -57,6 +61,10 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Breakdown(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+	if userID == 0 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	from, to := parseDateRange(r)
 
 	txType := r.URL.Query().Get("type")
@@ -74,6 +82,10 @@ func (h *Handler) Breakdown(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) CashFlow(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+	if userID == 0 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	from, to := parseDateRange(r)
 	granularity := r.URL.Query().Get("granularity")
 	if granularity == "" {
