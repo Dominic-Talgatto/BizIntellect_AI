@@ -39,16 +39,33 @@ export default function Chat() {
     setLoading(true)
 
     try {
+      console.log('[Chat] sending message:', text)
       const history = messages.slice(-10)
       const res = await api.post('/chat', {
         message: text,
         history: history.map(m => ({ role: m.role, content: m.content })),
       })
+      console.log('[Chat] received response:', res.data)
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply }])
-    } catch {
+    } catch (err: any) {
+      console.error('[Chat] error:', err)
+      let errorMsg = 'Unknown error'
+      
+      // Try to extract error message from various sources
+      if (err.response?.data?.detail) {
+        errorMsg = err.response.data.detail
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message
+      } else if (typeof err.response?.data === 'string') {
+        errorMsg = err.response.data
+      } else if (err.message) {
+        errorMsg = err.message
+      }
+      
+      console.log('[Chat] extracted error message:', errorMsg)
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I\'m having trouble connecting right now. Please try again.',
+        content: `Sorry, I encountered an error: ${errorMsg}. Please try again or check your OpenAI API key is set.`,
       }])
     } finally {
       setLoading(false)

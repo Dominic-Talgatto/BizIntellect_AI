@@ -49,6 +49,7 @@ func (h *Handler) Classify(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
@@ -95,6 +96,7 @@ func (h *Handler) Forecast(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
@@ -130,6 +132,7 @@ func (h *Handler) OCR(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
@@ -148,7 +151,8 @@ func (h *Handler) Chat(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 
 	var req struct {
-		Message string `json:"message"`
+		Message string        `json:"message"`
+		History []interface{} `json:"history"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -177,16 +181,31 @@ func (h *Handler) Chat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var context []monthSummary
+	context := make([]monthSummary, 0)
 	for _, v := range monthMap {
 		context = append(context, *v)
 	}
 
-	body, _ := json.Marshal(map[string]interface{}{
-		"message":  req.Message,
-		"context":  context,
-		"user_id":  userID,
-	})
+	// Ensure history is not nil so JSON encodes it as an empty array instead of null
+	history := req.History
+	if history == nil {
+		history = make([]interface{}, 0)
+	}
+
+	payload := map[string]interface{}{
+		"message": req.Message,
+		"context": context,
+		"history": history,
+		"user_id": userID,
+	}
+
+	// Log payload for debugging
+	if b, err := json.Marshal(payload); err == nil {
+		// Use standard log to ensure output appears in server logs
+		println("[mlproxy] proxying /chat payload:", string(b))
+	}
+
+	body, _ := json.Marshal(payload)
 
 	resp, err := http.Post(h.mlBaseURL+"/chat", "application/json", bytes.NewBuffer(body))
 	if err != nil {
@@ -194,6 +213,14 @@ func (h *Handler) Chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	// Check if ML service returned an error status
+	if resp.StatusCode >= 400 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		io.Copy(w, resp.Body)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	io.Copy(w, resp.Body)

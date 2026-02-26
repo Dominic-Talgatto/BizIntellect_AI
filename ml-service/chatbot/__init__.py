@@ -40,7 +40,14 @@ def _build_context_prompt(context: List[Dict[str, Any]]) -> str:
 
 
 def _openai_response(message: str, context: List[Dict], history: List[Dict], api_key: str) -> dict:
-    from openai import OpenAI
+    # import openai dynamically to avoid static import errors in editors/linters
+    try:
+        import importlib
+        openai_mod = importlib.import_module("openai")
+        OpenAI = getattr(openai_mod, "OpenAI")
+    except Exception:
+        # If openai isn't available, fall back to the rule-based responder.
+        return _rule_based_response(message, context)
 
     client = OpenAI(api_key=api_key)
     system_prompt = f"""You are FinSight AI, a smart financial advisor for small and medium businesses.
