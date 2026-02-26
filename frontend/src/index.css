@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #020617;
+    color: #f1f5f9;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility glass {
+  background-color: rgb(15 23 42 / 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(30 41 59);
+}
+
+@utility card {
+  background-color: rgb(15 23 42 / 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(30 41 59);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
